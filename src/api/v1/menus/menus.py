@@ -1,0 +1,81 @@
+import json
+import logging
+
+from fastapi import APIRouter, Query
+
+from repositories.menu import menu_repository
+from schemas.base import Fail, Success, SuccessExtra
+from schemas.menus import *
+from schemas.response import (
+    MenuDetailResponse,
+    MenuListResponse,
+    ResponseBase,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+
+@router.get("/list", summary="View Menu List", response_model=MenuListResponse)
+async def list_menu(
+    page: int = Query(1, description="Page Number"),
+    page_size: int = Query(10, description="Page Size"),
+):
+    async def get_menu_with_children(menu_id: int):
+        menu = await menu_repository.model.get(id=menu_id)
+        menu_dict = await menu.to_dict()
+        child_menus = await menu_repository.model.filter(parent_id=menu_id).order_by(
+            "order"
+        )
+        menu_dict["children"] = [
+            await get_menu_with_children(child.id) for child in child_menus
+        ]
+        return menu_dict
+
+    parent_menus = await menu_repository.model.filter(parent_id=0).order_by("order")
+    res_menu = [await get_menu_with_children(menu.id) for menu in parent_menus]
+    result = SuccessExtra(
+        data=res_menu, total=len(res_menu), page=page, page_size=page_size
+    )
+    return json.loads(result.body)
+
+
+@router.get("/get", summary="View Menu", response_model=MenuDetailResponse)
+async def get_menu(
+    menu_id: int = Query(..., description="Menu ID"),
+):
+    result_data = await menu_repository.get(id=menu_id)
+    result = Success(data=result_data)
+    return json.loads(result.body)
+
+
+@router.post("/create", summary="Create Menu", response_model=ResponseBase[None])
+async def create_menu(
+    menu_in: MenuCreate,
+):
+    await menu_repository.create(obj_in=menu_in)
+    result = Success(msg="Created Success")
+    return json.loads(result.body)
+
+
+@router.post("/update", summary="Update Menu", response_model=ResponseBase[None])
+async def update_menu(
+    menu_in: MenuUpdate,
+):
+    await menu_repository.update(id=menu_in.id, obj_in=menu_in)
+    result = Success(msg="Updated Success")
+    return json.loads(result.body)
+
+
+@router.delete("/delete", summary="Delete Menu", response_model=ResponseBase[None])
+async def delete_menu(
+    id: int = Query(..., description="Menu ID"),
+):
+    child_menu_count = await menu_repository.model.filter(parent_id=id).count()
+    if child_menu_count > 0:
+        result = Fail(msg="Cannot delete a menu with child menus")
+        return json.loads(result.body)
+    await menu_repository.remove(id=id)
+    result = Success(msg="Deleted Success")
+    return json.loads(result.body)
