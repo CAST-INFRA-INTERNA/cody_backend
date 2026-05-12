@@ -1,0 +1,28 @@
+name: Trigger Azure DevOps
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Azure DevOps Pipeline
+        run: |
+          curl -X POST \
+            -u ":${{ secrets.AZDO_PAT }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "resources": {
+                "repositories": {
+                  "self": {
+                    "refName": "refs/heads/${{ github.ref_name }}"
+                  }
+                }
+              }
+            }' \
+            https://dev.azure.com/<ORG>/<PROJECT>/_apis/pipelines/<PIPELINE_ID>/runs?api-version=7.0
