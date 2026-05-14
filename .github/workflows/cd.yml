@@ -1,0 +1,61 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    tags:
+      - 'v*.*.*'
+
+env:
+  PYTHON_VERSION: '3.11'
+  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: Deploy placeholder (staging)
+        run: |
+          echo "Deploy to staging: replace this with kubectl/helm/ssh steps"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Production deploy placeholder
+        run: |
+          echo "Deploy to production: replace with kubectl/helm/ssh. Use secrets.KUBE_CONFIG, secrets.SSH_KEY, or cloud provider action."
