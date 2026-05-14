@@ -35,7 +35,8 @@ except ModuleNotFoundError:  # pragma: no cover
         import pytest_asyncio  # type: ignore  # noqa: F401
     except Exception as exc:  # pragma: no cover
         warnings.warn(
-            f"pytest-asyncio is required for async tests but could not be installed: {exc}"
+            f"pytest-asyncio is required for async tests but could not be installed: {exc}",
+            stacklevel=2
         )
 
 if "pytest_asyncio" in sys.modules:  # pragma: no cover - plugin auto-registration helper

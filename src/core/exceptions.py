@@ -50,7 +50,7 @@ async def DoesNotExistHandle(req: Request, exc: DoesNotExist) -> JSONResponse:
     else:
         msg = "Requested resource does not exist"
 
-    content = dict(code=404, msg=msg)
+    content = {"code": 404, "msg": msg}
     return JSONResponse(content=content, status_code=404)
 
 
@@ -111,7 +111,7 @@ async def IntegrityHandle(request: Request, exc: IntegrityError):
     else:
         msg = "Data integrity error, please check input data"
 
-    content = dict(code=500, msg=msg)
+    content = {"code": 500, "msg": msg}
     return JSONResponse(content=content, status_code=500)
 
 
@@ -142,7 +142,7 @@ async def RequestValidationHandle(
     else:
         msg = "Request parameter validation failed, please check input format"
 
-    content = dict(code=422, msg=msg)
+    content = {"code": 422, "msg": msg}
     return JSONResponse(content=content, status_code=422)
 
 
@@ -173,7 +173,7 @@ async def ResponseValidationHandle(
     else:
         msg = "Server response format error"
 
-    content = dict(code=500, msg=msg)
+    content = {"code": 500, "msg": msg}
     return JSONResponse(content=content, status_code=500)
 
 
@@ -210,5 +210,5 @@ async def UnhandledExceptionHandle(request: Request, exc: Exception) -> JSONResp
     else:
         msg = "Internal server error, please try again later"
 
-    content = dict(code=500, msg=msg)
+    content = {"code": 500, "msg": msg}
     return JSONResponse(content=content, status_code=500)
